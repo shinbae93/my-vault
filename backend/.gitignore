@@ -1,0 +1,27 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output of build tools
+/build/
+/bin/
+
+# Go workspace file
+go.work
+
+# Dependency directories (remove the comment below if you use Go modules)
+vendor/
+
+# IDE/editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Env files
+.env* 

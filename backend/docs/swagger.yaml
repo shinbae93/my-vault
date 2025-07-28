@@ -1,0 +1,311 @@
+definitions:
+  my-vault_internal_models.CreateSecretRequest:
+    description: Request payload for creating a new secret
+    properties:
+      title:
+        example: GitHub API Token
+        type: string
+      type:
+        example: api_token
+        type: string
+      value:
+        example: ghp_xxxxxxxxxxxxxxxxxxxx
+        type: string
+    required:
+    - title
+    - type
+    - value
+    type: object
+  my-vault_internal_models.ErrorResponse:
+    description: Error response payload
+    properties:
+      error:
+        example: Vault is locked
+        type: string
+      message:
+        example: The vault must be unlocked before accessing secrets
+        type: string
+    type: object
+  my-vault_internal_models.SecretResponse:
+    description: Response payload for secret data
+    properties:
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      title:
+        example: GitHub API Token
+        type: string
+      type:
+        example: api_token
+        type: string
+      updated_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      value:
+        example: ghp_xxxxxxxxxxxxxxxxxxxx
+        type: string
+    type: object
+  my-vault_internal_models.SuccessResponse:
+    description: Success response payload
+    properties:
+      message:
+        example: Vault unlocked successfully
+        type: string
+    type: object
+  my-vault_internal_models.UnlockRequest:
+    description: Request payload for unlocking the vault
+    properties:
+      master_password:
+        example: my-secure-password
+        type: string
+    required:
+    - master_password
+    type: object
+  my-vault_internal_models.UpdateSecretRequest:
+    description: Request payload for updating an existing secret
+    properties:
+      title:
+        example: Updated GitHub Token
+        type: string
+      type:
+        example: api_token
+        type: string
+      value:
+        example: ghp_yyyyyyyyyyyyyyyyyyyy
+        type: string
+    required:
+    - title
+    - type
+    - value
+    type: object
+  my-vault_internal_models.VaultStatus:
+    description: Response payload for vault status
+    properties:
+      auto_lock_in:
+        example: 14m30s
+        type: string
+      last_activity:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      unlocked:
+        example: true
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /api/lock:
+    post:
+      description: Lock the vault and clear encryption key from memory
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.SuccessResponse'
+      summary: Lock vault
+      tags:
+      - vault
+  /api/secrets:
+    get:
+      description: Retrieve all secrets from the vault
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/my-vault_internal_models.SecretResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+      summary: List all secrets
+      tags:
+      - secrets
+    post:
+      consumes:
+      - application/json
+      description: Create a new secret in the vault
+      parameters:
+      - description: Secret creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/my-vault_internal_models.CreateSecretRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.SecretResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+      summary: Create a new secret
+      tags:
+      - secrets
+  /api/secrets/{id}:
+    delete:
+      description: Delete a secret by its ID
+      parameters:
+      - description: Secret ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+      summary: Delete a secret
+      tags:
+      - secrets
+    get:
+      description: Retrieve a specific secret by its ID
+      parameters:
+      - description: Secret ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.SecretResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+      summary: Get a secret by ID
+      tags:
+      - secrets
+    put:
+      consumes:
+      - application/json
+      description: Update an existing secret by its ID
+      parameters:
+      - description: Secret ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Secret update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/my-vault_internal_models.UpdateSecretRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.SecretResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+      summary: Update a secret
+      tags:
+      - secrets
+  /api/status:
+    get:
+      description: Get the current status of the vault
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.VaultStatus'
+      summary: Get vault status
+      tags:
+      - vault
+  /api/unlock:
+    post:
+      consumes:
+      - application/json
+      description: Unlock the vault using the master password
+      parameters:
+      - description: Unlock request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/my-vault_internal_models.UnlockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/my-vault_internal_models.ErrorResponse'
+      summary: Unlock vault
+      tags:
+      - vault
+swagger: "2.0"

@@ -1,10 +1,12 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"my-vault/internal/models"
 	"my-vault/internal/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 // VaultHandler handles vault-related HTTP requests
@@ -19,60 +21,87 @@ func NewVaultHandler(vaultService *services.VaultService) *VaultHandler {
 	}
 }
 
-// UnlockRequest represents the request to unlock the vault
-type UnlockRequest struct {
-	MasterPassword string `json:"master_password" validate:"required"`
-}
-
 // Unlock unlocks the vault with the provided master password
-func (h *VaultHandler) Unlock(w http.ResponseWriter, r *http.Request) {
-	var req UnlockRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+// @Summary Unlock vault
+// @Description Unlock the vault using the master password
+// @Tags vault
+// @Accept json
+// @Produce json
+// @Param request body models.UnlockRequest true "Unlock request"
+// @Success 200 {object} models.SuccessResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Router /api/unlock [post]
+func (h *VaultHandler) Unlock(c *gin.Context) {
+	var req models.UnlockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request body",
+			Message: "Failed to parse request body",
+		})
 		return
 	}
 
 	if req.MasterPassword == "" {
-		http.Error(w, "Master password is required", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Validation failed",
+			Message: "Master password is required",
+		})
 		return
 	}
 
 	if err := h.vaultService.Unlock(req.MasterPassword); err != nil {
-		http.Error(w, "Failed to unlock vault", http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error:   "Authentication failed",
+			Message: "Failed to unlock vault",
+		})
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Vault unlocked successfully",
+	c.JSON(http.StatusOK, models.SuccessResponse{
+		Message: "Vault unlocked successfully",
 	})
 }
 
 // Lock locks the vault
-func (h *VaultHandler) Lock(w http.ResponseWriter, r *http.Request) {
+// @Summary Lock vault
+// @Description Lock the vault and clear encryption key from memory
+// @Tags vault
+// @Produce json
+// @Success 200 {object} models.SuccessResponse
+// @Router /api/lock [post]
+func (h *VaultHandler) Lock(c *gin.Context) {
 	h.vaultService.Lock()
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Vault locked successfully",
+	c.JSON(http.StatusOK, models.SuccessResponse{
+		Message: "Vault locked successfully",
 	})
 }
 
 // Status returns the current vault status
-func (h *VaultHandler) Status(w http.ResponseWriter, r *http.Request) {
+// @Summary Get vault status
+// @Description Get the current status of the vault
+// @Tags vault
+// @Produce json
+// @Success 200 {object} models.VaultStatus
+// @Router /api/status [get]
+func (h *VaultHandler) Status(c *gin.Context) {
 	status := h.vaultService.GetStatus()
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(status)
+	c.JSON(http.StatusOK, status)
 }
 
 // RequireUnlocked is middleware that ensures the vault is unlocked
-func (h *VaultHandler) RequireUnlocked(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (h *VaultHandler) RequireUnlocked() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		if !h.vaultService.IsUnlocked() {
-			http.Error(w, "Vault is locked", http.StatusUnauthorized)
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+				Error:   "Vault is locked",
+				Message: "The vault must be unlocked before accessing secrets",
+			})
+			c.Abort()
 			return
 		}
-		next.ServeHTTP(w, r)
-	})
+		c.Next()
+	}
 } 

@@ -9,11 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
+	_ "my-vault/docs"
 	"my-vault/internal/handlers"
 	"my-vault/internal/repository"
 	"my-vault/internal/services"
@@ -43,46 +44,53 @@ func main() {
 	vaultHandler := handlers.NewVaultHandler(vaultService)
 	secretHandler := handlers.NewSecretHandler(secretService, vaultService)
 
-	// Setup router
-	r := chi.NewRouter()
+	// Setup Gin router
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
 
-	// Middleware
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	// CORS middleware
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type")
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Max-Age", "300")
 
-	// Routes
-	r.Route("/api", func(r chi.Router) {
-		// Vault management
-		r.Post("/unlock", vaultHandler.Unlock)
-		r.Post("/lock", vaultHandler.Lock)
-		r.Get("/status", vaultHandler.Status)
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
 
-		// Secret management (protected by vault unlock)
-		r.Route("/secrets", func(r chi.Router) {
-			r.Use(vaultHandler.RequireUnlocked)
-			r.Get("/", secretHandler.List)
-			r.Post("/", secretHandler.Create)
-			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/", secretHandler.Get)
-				r.Put("/", secretHandler.Update)
-				r.Delete("/", secretHandler.Delete)
-			})
-		})
+		c.Next()
 	})
 
 	// Health check
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+	r.GET("/health", func(c *gin.Context) {
+		c.String(http.StatusOK, "OK")
 	})
+
+	// Swagger documentation
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// API routes
+	api := r.Group("/api")
+	{
+		// Vault management
+		api.POST("/unlock", vaultHandler.Unlock)
+		api.POST("/lock", vaultHandler.Lock)
+		api.GET("/status", vaultHandler.Status)
+
+		// Secret management (protected by vault unlock)
+		secrets := api.Group("/secrets")
+		secrets.Use(vaultHandler.RequireUnlocked())
+		{
+			secrets.GET("/", secretHandler.List)
+			secrets.POST("/", secretHandler.Create)
+			secrets.GET("/:id", secretHandler.Get)
+			secrets.PUT("/:id", secretHandler.Update)
+			secrets.DELETE("/:id", secretHandler.Delete)
+		}
+	}
 
 	// Start server
 	port := os.Getenv("PORT")

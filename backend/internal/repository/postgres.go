@@ -20,9 +20,9 @@ func NewPostgresDB() (*PostgresDB, error) {
 	// Get database configuration from environment
 	host := getEnv("DB_HOST", "localhost")
 	port := getEnv("DB_PORT", "5432")
-	user := getEnv("DB_USER", "my-vault")
+	user := getEnv("DB_USER", "vaultbox")
 	password := getEnv("DB_PASSWORD", "supersecret")
-	dbname := getEnv("DB_NAME", "my-vault")
+	dbname := getEnv("DB_NAME", "vaultbox")
 
 	// Build connection string
 	connString := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable",

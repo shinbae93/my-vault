@@ -89,6 +89,18 @@ mocks:
 		echo "mockery not found. Install it first: go install github.com/vektra/mockery/v2@latest"; \
 	fi
 
+# Generate Swagger documentation
+.PHONY: swagger
+swagger:
+	@echo "Generating Swagger documentation..."
+	@if command -v swag > /dev/null; then \
+		swag init -g cmd/main.go -o docs --parseDependency --parseInternal; \
+	else \
+		echo "swag not found. Installing swag..."; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+		swag init -g cmd/main.go -o docs --parseDependency --parseInternal; \
+	fi
+
 # Docker build
 .PHONY: docker-build
 docker-build:
@@ -116,6 +128,7 @@ help:
 	@echo "  fmt          - Format code"
 	@echo "  lint         - Lint code"
 	@echo "  mocks        - Generate mocks"
+	@echo "  swagger      - Generate Swagger documentation"
 	@echo "  docker-build - Build Docker image"
 	@echo "  docker-run   - Run Docker container"
 	@echo "  help         - Show this help" 

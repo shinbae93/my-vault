@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"my-vault/internal/models"
 	"my-vault/internal/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 // SecretHandler handles secret-related HTTP requests
@@ -23,105 +24,184 @@ func NewSecretHandler(secretService *services.SecretService, vaultService *servi
 }
 
 // List retrieves all secrets
-func (h *SecretHandler) List(w http.ResponseWriter, r *http.Request) {
-	secrets, err := h.secretService.List(r.Context())
+// @Summary List all secrets
+// @Description Retrieve all secrets from the vault
+// @Tags secrets
+// @Produce json
+// @Success 200 {array} models.SecretResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/secrets [get]
+func (h *SecretHandler) List(c *gin.Context) {
+	secrets, err := h.secretService.List(c.Request.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to list secrets",
+			Message: err.Error(),
+		})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(secrets)
+	c.JSON(http.StatusOK, secrets)
 }
 
 // Create creates a new secret
-func (h *SecretHandler) Create(w http.ResponseWriter, r *http.Request) {
+// @Summary Create a new secret
+// @Description Create a new secret in the vault
+// @Tags secrets
+// @Accept json
+// @Produce json
+// @Param request body models.CreateSecretRequest true "Secret creation request"
+// @Success 201 {object} models.SecretResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/secrets [post]
+func (h *SecretHandler) Create(c *gin.Context) {
 	var req models.CreateSecretRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request body",
+			Message: "Failed to parse request body",
+		})
 		return
 	}
 
 	// Basic validation
 	if req.Title == "" || req.Type == "" || req.Value == "" {
-		http.Error(w, "Title, type, and value are required", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Validation failed",
+			Message: "Title, type, and value are required",
+		})
 		return
 	}
 
-	secret, err := h.secretService.Create(r.Context(), &req)
+	secret, err := h.secretService.Create(c.Request.Context(), &req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to create secret",
+			Message: err.Error(),
+		})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(secret)
+	c.JSON(http.StatusCreated, secret)
 }
 
 // Get retrieves a secret by ID
-func (h *SecretHandler) Get(w http.ResponseWriter, r *http.Request) {
-	// Extract ID from URL path - simplified for now
-	id := r.URL.Query().Get("id")
+// @Summary Get a secret by ID
+// @Description Retrieve a specific secret by its ID
+// @Tags secrets
+// @Produce json
+// @Param id path string true "Secret ID"
+// @Success 200 {object} models.SecretResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/secrets/{id} [get]
+func (h *SecretHandler) Get(c *gin.Context) {
+	id := c.Param("id")
 	if id == "" {
-		http.Error(w, "Secret ID is required", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request",
+			Message: "Secret ID is required",
+		})
 		return
 	}
 
-	secret, err := h.secretService.Get(r.Context(), id)
+	secret, err := h.secretService.Get(c.Request.Context(), id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error:   "Secret not found",
+			Message: err.Error(),
+		})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(secret)
+	c.JSON(http.StatusOK, secret)
 }
 
 // Update updates an existing secret
-func (h *SecretHandler) Update(w http.ResponseWriter, r *http.Request) {
-	// Extract ID from URL path - simplified for now
-	id := r.URL.Query().Get("id")
+// @Summary Update a secret
+// @Description Update an existing secret by its ID
+// @Tags secrets
+// @Accept json
+// @Produce json
+// @Param id path string true "Secret ID"
+// @Param request body models.UpdateSecretRequest true "Secret update request"
+// @Success 200 {object} models.SecretResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/secrets/{id} [put]
+func (h *SecretHandler) Update(c *gin.Context) {
+	id := c.Param("id")
 	if id == "" {
-		http.Error(w, "Secret ID is required", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request",
+			Message: "Secret ID is required",
+		})
 		return
 	}
 
 	var req models.UpdateSecretRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request body",
+			Message: "Failed to parse request body",
+		})
 		return
 	}
 
 	// Basic validation
 	if req.Title == "" || req.Type == "" || req.Value == "" {
-		http.Error(w, "Title, type, and value are required", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Validation failed",
+			Message: "Title, type, and value are required",
+		})
 		return
 	}
 
-	secret, err := h.secretService.Update(r.Context(), id, &req)
+	secret, err := h.secretService.Update(c.Request.Context(), id, &req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to update secret",
+			Message: err.Error(),
+		})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(secret)
+	c.JSON(http.StatusOK, secret)
 }
 
 // Delete removes a secret
-func (h *SecretHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	// Extract ID from URL path - simplified for now
-	id := r.URL.Query().Get("id")
+// @Summary Delete a secret
+// @Description Delete a secret by its ID
+// @Tags secrets
+// @Param id path string true "Secret ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/secrets/{id} [delete]
+func (h *SecretHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
 	if id == "" {
-		http.Error(w, "Secret ID is required", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request",
+			Message: "Secret ID is required",
+		})
 		return
 	}
 
-	if err := h.secretService.Delete(r.Context(), id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.secretService.Delete(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to delete secret",
+			Message: err.Error(),
+		})
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 } 

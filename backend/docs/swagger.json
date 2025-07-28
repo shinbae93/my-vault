@@ -1,0 +1,461 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/api/lock": {
+            "post": {
+                "description": "Lock the vault and clear encryption key from memory",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vault"
+                ],
+                "summary": "Lock vault",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/secrets": {
+            "get": {
+                "description": "Retrieve all secrets from the vault",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "secrets"
+                ],
+                "summary": "List all secrets",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/my-vault_internal_models.SecretResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new secret in the vault",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "secrets"
+                ],
+                "summary": "Create a new secret",
+                "parameters": [
+                    {
+                        "description": "Secret creation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.CreateSecretRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.SecretResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/secrets/{id}": {
+            "get": {
+                "description": "Retrieve a specific secret by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "secrets"
+                ],
+                "summary": "Get a secret by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Secret ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.SecretResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing secret by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "secrets"
+                ],
+                "summary": "Update a secret",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Secret ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Secret update request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.UpdateSecretRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.SecretResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a secret by its ID",
+                "tags": [
+                    "secrets"
+                ],
+                "summary": "Delete a secret",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Secret ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/status": {
+            "get": {
+                "description": "Get the current status of the vault",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vault"
+                ],
+                "summary": "Get vault status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.VaultStatus"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/unlock": {
+            "post": {
+                "description": "Unlock the vault using the master password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vault"
+                ],
+                "summary": "Unlock vault",
+                "parameters": [
+                    {
+                        "description": "Unlock request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.UnlockRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/my-vault_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "my-vault_internal_models.CreateSecretRequest": {
+            "description": "Request payload for creating a new secret",
+            "type": "object",
+            "required": [
+                "title",
+                "type",
+                "value"
+            ],
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "example": "GitHub API Token"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "api_token"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "ghp_xxxxxxxxxxxxxxxxxxxx"
+                }
+            }
+        },
+        "my-vault_internal_models.ErrorResponse": {
+            "description": "Error response payload",
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Vault is locked"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "The vault must be unlocked before accessing secrets"
+                }
+            }
+        },
+        "my-vault_internal_models.SecretResponse": {
+            "description": "Response payload for secret data",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "GitHub API Token"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "api_token"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "ghp_xxxxxxxxxxxxxxxxxxxx"
+                }
+            }
+        },
+        "my-vault_internal_models.SuccessResponse": {
+            "description": "Success response payload",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Vault unlocked successfully"
+                }
+            }
+        },
+        "my-vault_internal_models.UnlockRequest": {
+            "description": "Request payload for unlocking the vault",
+            "type": "object",
+            "required": [
+                "master_password"
+            ],
+            "properties": {
+                "master_password": {
+                    "type": "string",
+                    "example": "my-secure-password"
+                }
+            }
+        },
+        "my-vault_internal_models.UpdateSecretRequest": {
+            "description": "Request payload for updating an existing secret",
+            "type": "object",
+            "required": [
+                "title",
+                "type",
+                "value"
+            ],
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "example": "Updated GitHub Token"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "api_token"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "ghp_yyyyyyyyyyyyyyyyyyyy"
+                }
+            }
+        },
+        "my-vault_internal_models.VaultStatus": {
+            "description": "Response payload for vault status",
+            "type": "object",
+            "properties": {
+                "auto_lock_in": {
+                    "type": "string",
+                    "example": "14m30s"
+                },
+                "last_activity": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "unlocked": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        }
+    }
+}
